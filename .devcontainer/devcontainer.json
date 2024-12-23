@@ -1,0 +1,49 @@
+{
+  "name": "TimeSformer",
+  "build": {
+    "dockerfile": "./Dockerfile",
+    "context": "."
+  },
+  "shutdownAction": "none",
+  "runArgs": [
+    "--name",
+    "giovannesi_timesformer",
+    "--gpus",
+    "all",
+    "--ipc",
+    "host"
+  ],
+  "postCreateCommand": [],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.testing.pytestArgs": [
+          "."
+        ],
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestEnabled": true,
+        "python.formatting.provider": "black",
+        "python.linting.enabled": true,
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "ms-toolsai.tensorboard",
+        "ms-python.python"
+      ]
+    }
+  },
+  "mounts": [
+    {
+      "source": "/home/lucagiovannesi/Scrivania/datasets/prin",
+      "target": "/home/nonroot/dataset",
+      "type": "bind"
+    },
+    // {
+    //   "source": "/run/media/lucagiovannesi/SSD/PRIN",
+    //   "target": "/home/nonroot/ssd",
+    //   "type": "bind"
+    // }
+  ]
+  //"containerUser": "vscode"
+  //"forwardPorts": [3000]
+}
