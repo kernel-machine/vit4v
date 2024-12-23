@@ -1,4 +1,4 @@
 runs
 env
 **/__pycache__
-model*
+*.pth
