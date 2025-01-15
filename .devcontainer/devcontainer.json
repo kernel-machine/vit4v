@@ -9,7 +9,7 @@
     "--name",
     "giovannesi_timesformer",
     "--gpus",
-    "all",
+    "\"device=1\"",
     "--ipc",
     "host"
   ],
@@ -34,10 +34,10 @@
   },
   "mounts": [
     {
-      "source": "/home/lucagiovannesi/Scrivania/datasets/prin",
+      "source": "/mnt/ssd2/giovannesi/datasets/prin",
       "target": "/home/nonroot/dataset",
       "type": "bind"
-    },
+    }
     // {
     //   "source": "/run/media/lucagiovannesi/SSD/PRIN",
     //   "target": "/home/nonroot/ssd",

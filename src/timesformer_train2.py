@@ -3,6 +3,7 @@ import transformers
 import numpy as np
 from lib.train.dataset_loader import VarroaDataset
 from lib.train.model import MyModel
+from lib.train.model_vivit import ModelVivit
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import argparse
@@ -39,7 +40,7 @@ with open(os.path.join(log_dir,"args.json"),"w") as f:
 
 # Load model
 pretrained_model = args.pre_trained_model
-model:MyModel = MyModel(base_model=pretrained_model)
+model:ModelVivit = ModelVivit(base_model=pretrained_model)
 auto_processing = model.get_image_processor()
 
 devices = args.devices
@@ -155,3 +156,4 @@ for epoch in range(args.epochs):
     if epoch_val_loss < best_validation_loss:
         best_validation_loss = epoch_val_loss
         torch.save(model.state_dict(), os.path.join(log_dir,"model.pth"))
+        writer.add_text("Best epoch",f"Epoch: {epoch}")
