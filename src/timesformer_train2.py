@@ -20,7 +20,7 @@ parser.add_argument("--dataset", type=str, required=True)
 parser.add_argument("--no_aug", default=False, action="store_true")
 parser.add_argument("--lr", type=float, default=1e-3)
 parser.add_argument("--devices", type=str, default="0,1,2,3")
-parser.add_argument("--pre_trained_model", type=str, required=True) # facebook/timesformer-base-finetuned-ssv2
+parser.add_argument("--pre_trained_model", type=str, default=None) # facebook/timesformer-base-finetuned-ssv2
 
 args = parser.parse_args()
 
@@ -99,6 +99,7 @@ for epoch in range(args.epochs):
         optimizer.zero_grad()
         out = model(frames)
         out = out.flatten()
+        #print(out)
         loss = loss_fn(out, labels)
         loss.backward()
         optimizer.step()

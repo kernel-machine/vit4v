@@ -5,11 +5,10 @@ class ModelVivit(torch.nn.Module):
     def __init__(self, base_model:str = "google/vivit-b-16x2-kinetics400", *args, **kwargs):
         super().__init__(*args, **kwargs)
         # "google/vivit-b-16x2-kinetics400"
-        configuration = VivitConfig(num_frames=16)
-        self.model = VivitForVideoClassification(configuration)
+        self.model = VivitForVideoClassification.from_pretrained("google/vivit-b-16x2-kinetics400")
         num_classes = 1
         self.model.classifier = torch.nn.Linear(self.model.classifier.in_features, num_classes, bias=True)
-        self.image_processor = VivitImageProcessor.from_pretrained(base_model)
+        self.image_processor = VivitImageProcessor.from_pretrained("google/vivit-b-16x2-kinetics400")
 
     def forward(self, x):
         x = self.model(pixel_values=x)

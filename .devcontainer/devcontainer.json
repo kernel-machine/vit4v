@@ -9,7 +9,7 @@
     "--name",
     "giovannesi_timesformer",
     "--gpus",
-    "\"device=1\"",
+    "\"device=0,2\"",
     "--ipc",
     "host"
   ],
@@ -34,7 +34,7 @@
   },
   "mounts": [
     {
-      "source": "/mnt/ssd2/giovannesi/datasets/prin",
+      "source": "/mnt/hdd2/giovannesi/video_classification",
       "target": "/home/nonroot/dataset",
       "type": "bind"
     }
