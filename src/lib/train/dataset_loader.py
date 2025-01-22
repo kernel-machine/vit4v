@@ -71,6 +71,13 @@ class VarroaDataset(torch.utils.data.Dataset):
         self, enable_augmentation: bool
     ) -> torchvision.transforms.Compose:
         if enable_augmentation:
+            def random_crop(img) -> torch.Tensor:
+                original_size = img.shape[1]
+                new_size = random.randrange(int(original_size*0.7),original_size)
+                img = torchvision.transforms.functional.center_crop(img, new_size)
+                img = torchvision.transforms.functional.resize(img, original_size)
+                return img
+            
             return torchvision.transforms.Compose(
                 [
                     torchvision.transforms.Lambda(
@@ -78,6 +85,9 @@ class VarroaDataset(torch.utils.data.Dataset):
                             img, float(random.randint(-180, 180))
                         )
                     ),
+                    torchvision.transforms.Lambda(random_crop),
+                    torchvision.transforms.Lambda(lambda img: img if random.random()>0.5 else torchvision.transforms.functional.hflip(img)),
+                    torchvision.transforms.Lambda(lambda img: img if random.random()>0.5 else torchvision.transforms.functional.vflip(img)),
                     torchvision.transforms.ColorJitter(
                         brightness=float(random.randint(30, 80)) / 100,
                         saturation=float(random.randint(30, 80)) / 100,
