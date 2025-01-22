@@ -20,7 +20,7 @@ class VideoSegmenter:
             video_id = os.path.basename(self.video_path).split(" ")[0]
             video_name = f"video_{video_id}_{int(time.time_ns()/1000)}_debug.mp4"
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            self.vwriter = cv2.VideoWriter(video_name, fourcc, 20, (2*output_size, output_size))
+            self.vwriter = cv2.VideoWriter(video_name, fourcc, 20, (2*output_size, output_size*4))
             self.vwriter.set(cv2.VIDEOWRITER_PROP_QUALITY, 100)
 
     def get_frames(self) -> Generator[cv2.Mat]:
@@ -81,7 +81,12 @@ class VideoSegmenter:
                                 if self.show_debug:
                                     frame = cv2.rectangle(frame, top_left, bottom_right, (0,0,255), 20)
                     if self.show_debug and self.vwriter is not None:
-                        frame = cv2.resize(frame, (2*self.output_size, self.output_size))
+                        mask_saturation = cv2.cvtColor(mask_saturation, cv2.COLOR_GRAY2BGR)
+                        mask_value = cv2.cvtColor(mask_value, cv2.COLOR_GRAY2BGR)
+                        motion_mask = cv2.cvtColor(motion_mask, cv2.COLOR_GRAY2BGR)
+                        mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+                        frame = np.vstack([mask_saturation, mask_value, motion_mask, mask,frame])
+                        frame = cv2.resize(frame, (2*self.output_size, self.output_size*4))
                         self.vwriter.write(frame)
             else:
                 return

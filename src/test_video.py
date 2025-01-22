@@ -70,17 +70,24 @@ else:
         except ValueError:
             most_common = False
         print(f"{folder_name} {os.path.basename(video)} -> predictions: {predictions} -> Verdict: {most_common}")
-        return most_common
+        return most_common, predictions
     vm = ValidationMetrics()
+    seg_vm = ValidationMetrics()
+    vm_top_conf = ValidationMetrics()
     for video in glob.glob(os.path.join(args.video,"varroa_infested","*.mkv")):
-        prediction = p(video)
+        prediction, seg_preds = p(video)
+        for seg_pred in seg_preds:
+            seg_vm.add_prediction(seg_pred,True)
         vm.add_prediction(prediction,True)
     for video in glob.glob(os.path.join(args.video,"varroa_free","*.mkv")):
-        prediction = p(video)
+        prediction, seg_preds = p(video)
+        for seg_pred in seg_preds:
+            seg_vm.add_prediction(seg_pred,False)
         vm.add_prediction(prediction,False)
 
-    print(f"F1: {vm.get_f1()}")
+    print(f"Per Video: F1: {vm.get_f1()} | Acc: {vm.get_accuracy()}")
     tp, fp, tn, fn = vm.get_metrics()
-    print(f"TP: {tp}, FP: {fp}, TN: {tn}, FN:{fn}")
+    print(f"Per Video: TP: {tp}, FP: {fp}, TN: {tn}, FN:{fn}")
+    print(f"Per Segment: F1: {seg_vm.get_f1()} | Acc: {seg_vm.get_accuracy()}")
     cm = vm.get_confusion_matrix()
     cm.figure_.savefig("confusion_matrix.png")
