@@ -8,8 +8,7 @@
   "runArgs": [
     "--name",
     "giovannesi_timesformer",
-    "--gpus",
-    "\"device=0,2\"",
+    "--device","nvidia.com/gpu=7",
     "--ipc",
     "host"
   ],
@@ -28,14 +27,15 @@
       },
       "extensions": [
         "ms-toolsai.tensorboard",
-        "ms-python.python"
+        "ms-python.python",
+        "ms-azuretools.vscode-docker"
       ]
     }
   },
   "mounts": [
     {
-      "source": "/mnt/hdd2/giovannesi/video_classification",
-      "target": "/home/nonroot/dataset",
+      "source": "/mnt/ssd1/giovannesi",
+      "target": "/dataset",
       "type": "bind"
     }
     // {
