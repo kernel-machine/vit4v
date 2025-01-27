@@ -2,7 +2,7 @@ from transformers import TimesformerForVideoClassification, TimesformerConfig, A
 import torch
 
 class MyModel(torch.nn.Module):
-    def __init__(self, base_model:str, *args, **kwargs):
+    def __init__(self, base_model:str = "facebook/timesformer-base-finetuned-k400", *args, **kwargs):
         super().__init__(*args, **kwargs)
         configuration = TimesformerConfig()
         # "facebook/timesformer-base-finetuned-k400"

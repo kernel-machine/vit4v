@@ -13,6 +13,17 @@
             "args": [
                 "--dataset","/home/nonroot/ssd/timesformer_segment"
             ]
+        },
+        {
+            "name": "Dataset split",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "--segment_path", "/dataset/segments32_all",
+                "--output_path","test",
+            ]
         }
     ]
 }

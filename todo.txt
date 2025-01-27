@@ -1,5 +1,7 @@
-- Dividi video manualmente, 1/3 per il validation e 2/3 per il training
-- Genera i subvideo dai due insiemi
-- Cerca di bilanciare il val dataset se puoi, eliminado i video in più o spostandoli nel training (WATCHOUT devi togliere tutte le tracce di quel video)
-- Fai il training
-- 
+- Training e scegli la migliore tra:
+    - Timesformer32
+    - Vivit32
+    - CNN 32
+- Applica MetaFormer
+- Cerca codice SoftMax Free e provalo
+ 
