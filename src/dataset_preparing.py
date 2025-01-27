@@ -9,6 +9,9 @@ from lib.dataset.fifo_frames import FifoFrames
 import shutil
 from multiprocessing.pool import ThreadPool
 
+'''
+From RAW videos this code extract the segments
+'''
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--video_path",
