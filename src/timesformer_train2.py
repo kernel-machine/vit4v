@@ -21,6 +21,7 @@ parser.add_argument("--no_aug", default=False, action="store_true")
 parser.add_argument("--lr", type=float, default=1e-3)
 parser.add_argument("--devices", type=str, default="0,1,2,3")
 parser.add_argument("--pre_trained_model", type=str, default=None) # facebook/timesformer-base-finetuned-ssv2
+parser.add_argument("--model", type=str)
 
 args = parser.parse_args()
 
@@ -40,12 +41,18 @@ with open(os.path.join(log_dir,"args.json"),"w") as f:
 
 # Load model
 pretrained_model = args.pre_trained_model
-model:ModelVivit = ModelVivit(base_model=pretrained_model)
+if args.model == "vivit":
+    model:ModelVivit = ModelVivit()
+    writer.add_text("Model","ViVit")
+else:
+    model:MyModel = MyModel()
+    writer.add_text("Model","TimeSformer")
 auto_processing = model.get_image_processor()
 
 devices = args.devices
 devices = devices.split(",")
 devices = list(map(lambda x:int(x), devices))
+torch.cuda.set_device(devices[0])
 device = torch.device(f"cuda:{devices[0]}" if torch.cuda.is_available() else "cpu")
 model = torch.nn.DataParallel(model, device_ids=devices).cuda()
 
@@ -69,10 +76,10 @@ train_dataloader = torch.utils.data.DataLoader(
     train_ds,
     batch_size=args.batch_size,
     shuffle=True,
-    num_workers=8,
+    num_workers=32,
 )
 val_dataloader = torch.utils.data.DataLoader(
-    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4
+    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=10
 )
 
 pos_weight = torch.tensor([train_ds.varroa_free_count()/train_ds.varroa_infested_count()]).cuda()
