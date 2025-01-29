@@ -18,7 +18,8 @@ class VarroaDataset(torch.utils.data.Dataset):
         image_processor: callable = None,
         seed: int = 1234,
         use_augmentation: bool = False,
-        resolution:int = 224
+        resolution:int = 224,
+        format:str=None
     ) -> None:
         random.seed(seed)
         self.videos_base_path = videos_path
@@ -28,6 +29,7 @@ class VarroaDataset(torch.utils.data.Dataset):
         self.image_processor = image_processor
         self.use_augmentation = use_augmentation
         self.resolution = resolution
+        self.format = format
 
     def __len__(self):
         return len(self.videos_paths)
@@ -66,6 +68,9 @@ class VarroaDataset(torch.utils.data.Dataset):
         images = torch.stack(list(map(load_img, frames_paths)))
         chain = self.create_augment_chain(self.use_augmentation)
         images = torch.stack([chain(img) for img in images]).squeeze(1)
+        if self.format == "movinet":
+            images = torch.permute(images,[1,0,2,3])
+            images = images.float()
 
         return images, label
 

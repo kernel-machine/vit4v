@@ -72,11 +72,13 @@ val_ds = VarroaDataset(
     os.path.join(args.dataset, "val"),
     image_processor=auto_processing,
     use_augmentation=False,
+    format = "movinet"
 )
 train_ds = VarroaDataset(
     os.path.join(args.dataset, "train"),
     image_processor=auto_processing,
     use_augmentation=(not args.no_aug),
+    format = "movinet"
 )
 
 val_ds.balance()
@@ -87,10 +89,10 @@ train_dataloader = torch.utils.data.DataLoader(
     train_ds,
     batch_size=args.batch_size,
     shuffle=True,
-    num_workers=8,
+    num_workers=64,
 )
 val_dataloader = torch.utils.data.DataLoader(
-    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=8
+    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=32
 )
 
 pos_weight = torch.tensor([train_ds.varroa_free_count()/train_ds.varroa_infested_count()]).cuda()
@@ -106,8 +108,6 @@ for epoch in range(args.epochs):
     running_train_loss = 0
     correct_train_predictions = 0
     total_train_predictions = 0
-    if args.model == "movinet":
-        model.clean_activation_buffers()
     # Train
     for i, (frames, labels) in enumerate(train_dataloader):
         # augment_chain = create_augment_chain(enable_augmentation=True)
@@ -124,7 +124,9 @@ for epoch in range(args.epochs):
         loss = loss_fn(out, labels)
         loss.backward()
         optimizer.step()
-
+        if args.model == "movinet":
+            model.module.clean_activation_buffers()
+            optimizer.zero_grad()
         predicted_classes = torch.sigmoid(out).round()
         correct_train_predictions += (predicted_classes == labels).sum().item()
         total_train_predictions += labels.size(0)
@@ -145,7 +147,7 @@ for epoch in range(args.epochs):
     writer.flush()
 
     if args.model == "movinet":
-        model.clean_activation_buffers()
+        model.module.clean_activation_buffers()
     # Validation
     model.eval()
     running_val_loss = 0.0
