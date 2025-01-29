@@ -50,7 +50,7 @@ if args.model == "vivit":
     auto_processing = model.get_image_processor()
     RESOLUTION = 224
 elif args.model == "movinet":
-    model = MoViNet(_C.MODEL.MoViNetA1, causal = True, pretrained = True )
+    model = MoViNet(_C.MODEL.MoViNetA1, causal = False, pretrained = True )
     model.classifier[3] = torch.nn.Conv3d(2048, 1, (1,1,1))
     auto_processing = None
     RESOLUTION = 172
@@ -65,7 +65,9 @@ devices = devices.split(",")
 devices = list(map(lambda x:int(x), devices))
 torch.cuda.set_device(devices[0])
 device = torch.device(f"cuda:{devices[0]}" if torch.cuda.is_available() else "cpu")
-model = torch.nn.DataParallel(model, device_ids=devices).cuda()
+model.to(device)
+#model = torch.nn.DataParallel(model, device_ids=devices).cuda()
+model.clean_activation_buffers()
 
 # Load dataset
 val_ds = VarroaDataset(
@@ -89,10 +91,10 @@ train_dataloader = torch.utils.data.DataLoader(
     train_ds,
     batch_size=args.batch_size,
     shuffle=True,
-    num_workers=64,
+    num_workers=8,
 )
 val_dataloader = torch.utils.data.DataLoader(
-    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=32
+    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4
 )
 
 pos_weight = torch.tensor([train_ds.varroa_free_count()/train_ds.varroa_infested_count()]).cuda()
@@ -117,15 +119,14 @@ for epoch in range(args.epochs):
 
         optimizer.zero_grad()
         out = model(frames)
-        if args.model == "movinet":
-            out = torch.nn.LogSoftmax(dim=1)(out)
+        # if args.model == "movinet":
+        #     out = torch.nn.LogSoftmax(dim=1)(out)
         out = out.flatten()
-        #print(out)
         loss = loss_fn(out, labels)
         loss.backward()
         optimizer.step()
         if args.model == "movinet":
-            model.module.clean_activation_buffers()
+            model.clean_activation_buffers()
             optimizer.zero_grad()
         predicted_classes = torch.sigmoid(out).round()
         correct_train_predictions += (predicted_classes == labels).sum().item()
@@ -147,7 +148,7 @@ for epoch in range(args.epochs):
     writer.flush()
 
     if args.model == "movinet":
-        model.module.clean_activation_buffers()
+        model.clean_activation_buffers()
     # Validation
     model.eval()
     running_val_loss = 0.0
@@ -157,8 +158,6 @@ for epoch in range(args.epochs):
         for i, (frames, labels) in enumerate(val_dataloader):
             frames = frames.cuda()
             out = model(frames)
-            if args.model == "movinet":
-                out = torch.nn.LogSoftmax(dim=1)(out)
             out = out.flatten()
             labels = labels.float().cuda()
             loss = loss_fn(out, labels)
