@@ -24,6 +24,16 @@
                 "--segment_path", "/dataset/segments32_all",
                 "--output_path","test",
             ]
+        },
+        {
+            "name": "MoViNet",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "--dataset", "/dataset/segment32_vs30",
+            ]
         }
     ]
 }

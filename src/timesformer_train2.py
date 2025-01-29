@@ -12,6 +12,8 @@ import os
 import random
 import torchvision
 import json
+from movinets import MoViNet
+from movinets.config import _C
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--batch_size", type=int, default=1)
@@ -19,7 +21,7 @@ parser.add_argument("--epochs", type=int, default=30)
 parser.add_argument("--dataset", type=str, required=True)
 parser.add_argument("--no_aug", default=False, action="store_true")
 parser.add_argument("--lr", type=float, default=1e-3)
-parser.add_argument("--devices", type=str, default="0,1,2,3")
+parser.add_argument("--devices", type=str, default="0")
 parser.add_argument("--pre_trained_model", type=str, default=None) # facebook/timesformer-base-finetuned-ssv2
 parser.add_argument("--model", type=str)
 
@@ -41,13 +43,22 @@ with open(os.path.join(log_dir,"args.json"),"w") as f:
 
 # Load model
 pretrained_model = args.pre_trained_model
+RESOLUTION = 0
 if args.model == "vivit":
     model:ModelVivit = ModelVivit()
     writer.add_text("Model","ViVit")
+    auto_processing = model.get_image_processor()
+    RESOLUTION = 224
+elif args.model == "movinet":
+    model = MoViNet(_C.MODEL.MoViNetA1, causal = True, pretrained = True )
+    model.classifier[3] = torch.nn.Conv3d(2048, 1, (1,1,1))
+    auto_processing = None
+    RESOLUTION = 172
 else:
     model:MyModel = MyModel()
     writer.add_text("Model","TimeSformer")
-auto_processing = model.get_image_processor()
+    auto_processing = model.get_image_processor()
+    RESOLUTION = 224
 
 devices = args.devices
 devices = devices.split(",")
@@ -76,10 +87,10 @@ train_dataloader = torch.utils.data.DataLoader(
     train_ds,
     batch_size=args.batch_size,
     shuffle=True,
-    num_workers=32,
+    num_workers=8,
 )
 val_dataloader = torch.utils.data.DataLoader(
-    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=10
+    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=8
 )
 
 pos_weight = torch.tensor([train_ds.varroa_free_count()/train_ds.varroa_infested_count()]).cuda()
@@ -95,7 +106,8 @@ for epoch in range(args.epochs):
     running_train_loss = 0
     correct_train_predictions = 0
     total_train_predictions = 0
-
+    if args.model == "movinet":
+        model.clean_activation_buffers()
     # Train
     for i, (frames, labels) in enumerate(train_dataloader):
         # augment_chain = create_augment_chain(enable_augmentation=True)
@@ -105,6 +117,8 @@ for epoch in range(args.epochs):
 
         optimizer.zero_grad()
         out = model(frames)
+        if args.model == "movinet":
+            out = torch.nn.LogSoftmax(dim=1)(out)
         out = out.flatten()
         #print(out)
         loss = loss_fn(out, labels)
@@ -130,6 +144,8 @@ for epoch in range(args.epochs):
     writer.add_scalar("Acc/train", epoch_train_accuracy, epoch)
     writer.flush()
 
+    if args.model == "movinet":
+        model.clean_activation_buffers()
     # Validation
     model.eval()
     running_val_loss = 0.0
@@ -139,6 +155,8 @@ for epoch in range(args.epochs):
         for i, (frames, labels) in enumerate(val_dataloader):
             frames = frames.cuda()
             out = model(frames)
+            if args.model == "movinet":
+                out = torch.nn.LogSoftmax(dim=1)(out)
             out = out.flatten()
             labels = labels.float().cuda()
             loss = loss_fn(out, labels)

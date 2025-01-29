@@ -18,6 +18,7 @@ class VarroaDataset(torch.utils.data.Dataset):
         image_processor: callable = None,
         seed: int = 1234,
         use_augmentation: bool = False,
+        resolution:int = 224
     ) -> None:
         random.seed(seed)
         self.videos_base_path = videos_path
@@ -26,6 +27,7 @@ class VarroaDataset(torch.utils.data.Dataset):
         random.shuffle(self.videos_paths)
         self.image_processor = image_processor
         self.use_augmentation = use_augmentation
+        self.resolution = resolution
 
     def __len__(self):
         return len(self.videos_paths)
@@ -57,7 +59,7 @@ class VarroaDataset(torch.utils.data.Dataset):
         def load_img(frame_path: str) -> torch.Tensor:
             absolute_path = os.path.join(segment_path, frame_path)
             img = Image.open(absolute_path).convert("RGB")
-            img = img.resize([224, 224])
+            img = img.resize([self.resolution, self.resolution])
             img = torchvision.transforms.functional.pil_to_tensor(img)
             return img
 
@@ -94,7 +96,7 @@ class VarroaDataset(torch.utils.data.Dataset):
                         hue=float(random.randint(0, 30)) / 100,
                         contrast=float(random.randint(30, 80)) / 100,
                     ),
-                    torchvision.transforms.Lambda(
+                    torchvision.transforms.Lambda(lambda x:x) if self.image_processor is None else torchvision.transforms.Lambda(
                         lambda img: self.image_processor(img, return_tensors="pt")[
                             "pixel_values"
                         ].squeeze(0)
@@ -104,10 +106,10 @@ class VarroaDataset(torch.utils.data.Dataset):
         else:
             return torchvision.transforms.Compose(
                 [
-                    torchvision.transforms.Lambda(
+                    torchvision.transforms.Lambda(lambda x:x) if self.image_processor is None else torchvision.transforms.Lambda(
                         lambda img: self.image_processor(img, return_tensors="pt")[
                             "pixel_values"
                         ].squeeze(0)
-                    )
+                    ),
                 ]
             )
