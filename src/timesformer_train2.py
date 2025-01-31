@@ -49,11 +49,16 @@ if args.model == "vivit":
     writer.add_text("Model","ViVit")
     auto_processing = model.get_image_processor()
     RESOLUTION = 224
-elif args.model == "movinet":
+elif args.model == "movinet_a1":
     model = MoViNet(_C.MODEL.MoViNetA1, causal = False, pretrained = True )
     model.classifier[3] = torch.nn.Conv3d(2048, 1, (1,1,1))
     auto_processing = None
     RESOLUTION = 172
+elif args.model == "movinet_a2":
+    model = MoViNet(_C.MODEL.MoViNetA2, causal = False, pretrained = True )
+    model.classifier[3] = torch.nn.Conv3d(2048, 1, (1,1,1))
+    auto_processing = None
+    RESOLUTION = 224
 else:
     model:MyModel = MyModel()
     writer.add_text("Model","TimeSformer")
@@ -91,10 +96,10 @@ train_dataloader = torch.utils.data.DataLoader(
     train_ds,
     batch_size=args.batch_size,
     shuffle=True,
-    num_workers=8,
+    num_workers=128,
 )
 val_dataloader = torch.utils.data.DataLoader(
-    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=4
+    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=128
 )
 
 pos_weight = torch.tensor([train_ds.varroa_free_count()/train_ds.varroa_infested_count()]).cuda()
