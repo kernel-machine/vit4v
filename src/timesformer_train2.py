@@ -44,26 +44,31 @@ with open(os.path.join(log_dir,"args.json"),"w") as f:
 # Load model
 pretrained_model = args.pre_trained_model
 RESOLUTION = 0
+data_format = None
 if args.model == "vivit":
     model:ModelVivit = ModelVivit()
     writer.add_text("Model","ViVit")
     auto_processing = model.get_image_processor()
     RESOLUTION = 224
+    data_format = "vivit"
 elif args.model == "movinet_a1":
     model = MoViNet(_C.MODEL.MoViNetA1, causal = False, pretrained = True )
     model.classifier[3] = torch.nn.Conv3d(2048, 1, (1,1,1))
     auto_processing = None
     RESOLUTION = 172
+    data_format = "movinet"
 elif args.model == "movinet_a2":
     model = MoViNet(_C.MODEL.MoViNetA2, causal = False, pretrained = True )
     model.classifier[3] = torch.nn.Conv3d(2048, 1, (1,1,1))
     auto_processing = None
     RESOLUTION = 224
+    data_format = "movinet"
 else:
     model:MyModel = MyModel()
     writer.add_text("Model","TimeSformer")
     auto_processing = model.get_image_processor()
     RESOLUTION = 224
+    data_format = "timesformer"
 
 devices = args.devices
 devices = devices.split(",")
@@ -71,21 +76,23 @@ devices = list(map(lambda x:int(x), devices))
 torch.cuda.set_device(devices[0])
 device = torch.device(f"cuda:{devices[0]}" if torch.cuda.is_available() else "cpu")
 model.to(device)
-#model = torch.nn.DataParallel(model, device_ids=devices).cuda()
-model.clean_activation_buffers()
+if "movinet" in args.model:
+    model.clean_activation_buffers()
+else:
+    model = torch.nn.DataParallel(model, device_ids=devices).cuda()
 
 # Load dataset
 val_ds = VarroaDataset(
     os.path.join(args.dataset, "val"),
     image_processor=auto_processing,
     use_augmentation=False,
-    format = "movinet"
+    format = data_format
 )
 train_ds = VarroaDataset(
     os.path.join(args.dataset, "train"),
     image_processor=auto_processing,
     use_augmentation=(not args.no_aug),
-    format = "movinet"
+    format = data_format
 )
 
 val_ds.balance()
