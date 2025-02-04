@@ -46,7 +46,7 @@ pretrained_model = args.pre_trained_model
 RESOLUTION = 0
 data_format = None
 if args.model == "vivit":
-    model:ModelVivit = ModelVivit()
+    model:ModelVivit = ModelVivit(meta_former=True)
     writer.add_text("Model","ViVit")
     auto_processing = model.get_image_processor()
     RESOLUTION = 224
@@ -103,10 +103,10 @@ train_dataloader = torch.utils.data.DataLoader(
     train_ds,
     batch_size=args.batch_size,
     shuffle=True,
-    num_workers=128,
+    num_workers=8,
 )
 val_dataloader = torch.utils.data.DataLoader(
-    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=128
+    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=8
 )
 
 pos_weight = torch.tensor([train_ds.varroa_free_count()/train_ds.varroa_infested_count()]).cuda()
