@@ -5,8 +5,8 @@ import numpy as np
 from collections.abc import Generator
 import time
 
-MIN_AREA_THRESHOLD = 5000
-BOX_SIZE = 920
+MIN_AREA_THRESHOLD = 1250
+BOX_SIZE = 224
 
 class VideoSegmenter:
     def __init__(self, video_path:str, output_size=1000, show_debug:bool=False) -> None:
@@ -29,6 +29,9 @@ class VideoSegmenter:
                 frame = frame[0:-180][:]
                 (frame_h,frame_w) = frame.shape[:2]
 
+                frame = cv2.resize(frame, (int(frame_w*0.25), int(frame_h*0.25)))
+                (frame_h,frame_w) = frame.shape[:2]
+
                 # Get Saturation and Value mask
                 frame_blur = cv2.GaussianBlur(frame, (7,7), 10)
                 frame_hsv = cv2.cvtColor(frame_blur, cv2.COLOR_BGR2HSV)
@@ -45,7 +48,7 @@ class VideoSegmenter:
                     motion_mask = cv2.morphologyEx(motion_mask, cv2.MORPH_OPEN, kernel)
                     inverted_motion_mask = cv2.bitwise_not(motion_mask)
                     contours, _ = cv2.findContours(inverted_motion_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-                    threshold_area = 250
+                    threshold_area = 300
 
                     # Fill small holes to remove noise
                     for c in contours:
@@ -54,7 +57,7 @@ class VideoSegmenter:
                     mask = cv2.bitwise_and(mask, motion_mask)
                     contours, _ = cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
                     if len(contours) > 0:
-                        contours = list(filter(lambda x:cv2.boundingRect(x)[2]>150, contours)) #Remove small holes
+                        contours = list(filter(lambda x:cv2.boundingRect(x)[2]>40, contours)) #Remove small holes
                         if len(contours) > 0:
                             areas = list(map(lambda x:cv2.contourArea(x), contours))
                             max_index = np.argmax(areas)
@@ -85,7 +88,10 @@ class VideoSegmenter:
                         mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
                         frame = np.vstack([mask_saturation, mask_value, motion_mask, mask,frame])
                         frame = cv2.resize(frame, (2*self.output_size, self.output_size*4))
-                        self.vwriter.write(frame)
+                        #self.vwriter.write(frame)
+                        cv2.imshow("Preview",frame)
+                        cv2.waitKey(1000//50)
+                    
             else:
                 return
     def get_video_length(self) -> int:
@@ -108,10 +114,10 @@ if __name__ == "__main__":
 
     for video_path in glob.glob(os.path.join(args.video,"*.mkv")):
         print(f"Processing {video_path}")
-        vs = VideoSegmenter(video_path)
+        vs = VideoSegmenter(video_path, show_debug=True, output_size=224)
         frames = vs.get_frames()
         for frame in frames:
-            print("frame")
-            cv2.imwrite("image.png",frame)
-            break
+            #cv2.imwrite("image.png",frame)
+            #break
+            pass
         break

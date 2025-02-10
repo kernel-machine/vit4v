@@ -46,3 +46,7 @@ class ValidationMetrics:
     def get_confusion_matrix(self):
         m = ConfusionMatrixDisplay.from_predictions(self.labels, self.predictions)
         return m
+    
+    def __str__(self):
+        tp, fp, tn, fn = self.get_metrics()
+        return f"TP: {tp}, FP: {fp}, TN: {tn}, FN: {fn} | Acc: {self.get_accuracy()} | F1: {self.get_f1()}"

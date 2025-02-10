@@ -48,6 +48,18 @@
                 "--output_videos","/dataset/raw/dataset_v2_raw_s32_val",
                 "--raw_videos","/dataset/raw/dataset_v2_raw"
             ]
+        },
+        {
+            "name": "Test video",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "--window_size", "32",
+                "--model","runs/vivit_6/model.pth",
+                "--video","/dataset/raw/dataset_v2_raw_s32_val"
+            ]
         }
     ]
 }

@@ -7,7 +7,7 @@ from lib.train.model_vivit import ModelVivit
 from lib.train.model import MyModel
 from PIL import Image
 from torchvision import transforms
-from lib.dataset.fifo_frames import FifoFrames
+from lib.dataset.frame_buffer import FrameBuffer
 import torchvision
 import glob
 from lib.validation_metric import ValidationMetrics
@@ -24,7 +24,7 @@ args = args.parse_args()
 
 
 def process_video(model: torch.nn.Module, video_path: str, window_size: int, device: torch.device, model_resolution:int, image_processing: callable = None) -> list[bool]:
-    vs = VideoSegmenter(video_path)
+    vs = VideoSegmenter(video_path, output_size=224)
     frames = vs.get_frames()
     f = torchvision.transforms.Compose(
                 [
@@ -36,9 +36,11 @@ def process_video(model: torch.nn.Module, video_path: str, window_size: int, dev
                 ]
             )
     predictions = []
-    frames_buffer = []
+    frame_buffer = FrameBuffer(window_size)
     avg_inference_time:tuple(float,int) = (0.0,0)
+    pre_proc_times = []
     while True:
+        start_frame_time = time.time()
         try:
             frame = next(frames)
         except StopIteration:
@@ -46,30 +48,31 @@ def process_video(model: torch.nn.Module, video_path: str, window_size: int, dev
         frame = Image.fromarray(frame).convert("RGB")
         frame = frame.resize([model_resolution, model_resolution])
         frame = torchvision.transforms.functional.pil_to_tensor(frame)
-        frames_buffer.append(frame)
+        frame_buffer.append(frame)
+        pre_proc_times.append(time.time()-start_frame_time)
 
-        if len(frames_buffer) == window_size:
-            with torch.no_grad():
-                tensor_images = [f(img) for img in frames_buffer]
-                tensor_images = torch.stack(tensor_images)
-                if "movinet" in args.model:
-                    tensor_images = tensor_images.unsqueeze(0).permute(0,2,1,3,4).float()
-                else:
-                    tensor_images = tensor_images.permute(1, 0, 2, 3, 4)
-                #if "movinet" in args.model:
-                #    tensor_images = tensor_images.permute(0,2,1,3,4)
-                tensor_images = tensor_images.to(device)
-                torch.cuda.synchronize()
-                start_time = time.time()
-                prediction_logits = model(tensor_images)
-                torch.cuda.synchronize()
-                end_time = time.time()
-                inference_time = end_time - start_time
-                avg_inference_time = (avg_inference_time[0]+inference_time, avg_inference_time[1]+1)
-                predicted_classes = torch.sigmoid(prediction_logits).round().flatten()
-                predictions.append(bool(predicted_classes.cpu()))
-                frames_buffer.clear()
-    return predictions, 0 if avg_inference_time[1]==0 else avg_inference_time[0]/avg_inference_time[1]
+    for segment in frame_buffer.get_segments():
+        with torch.no_grad():
+            tensor_images = [f(img) for img in segment]
+            tensor_images = torch.stack(tensor_images)
+            if "movinet" in args.model:
+                tensor_images = tensor_images.unsqueeze(0).permute(0,2,1,3,4).float()
+            else:
+                tensor_images = tensor_images.permute(1, 0, 2, 3, 4)
+            #if "movinet" in args.model:
+            #    tensor_images = tensor_images.permute(0,2,1,3,4)
+            tensor_images = tensor_images.to(device)
+            torch.cuda.synchronize()
+            start_time = time.time()
+            prediction_logits = model(tensor_images)
+            torch.cuda.synchronize()
+            end_time = time.time()
+            inference_time = end_time - start_time
+            avg_inference_time = (avg_inference_time[0]+inference_time, avg_inference_time[1]+1)
+            predicted_classes = torch.sigmoid(prediction_logits).round().flatten()
+            predictions.append(bool(predicted_classes.cpu()))
+
+    return predictions, 0 if avg_inference_time[1]==0 else avg_inference_time[0]/avg_inference_time[1], sum(pre_proc_times)/len(pre_proc_times)
 
 RESOLUTION = 0
 if "vivit" in args.model:
@@ -129,43 +132,41 @@ if os.path.isfile(args.video):
 else:
     print("Evaluating positive samples")
     def p(video:str) -> bool:
-        predictions, avg_time = process_video(model, video, window_size=args.window_size, device=device, model_resolution=RESOLUTION, image_processing=auto_processing)
+        predictions, avg_time, pre_proc_time = process_video(model, video, window_size=args.window_size, device=device, model_resolution=RESOLUTION, image_processing=auto_processing)
         folder_name = os.path.normpath(video).split(os.sep)[-2]
-        try:
-            most_common = max(set(predictions), key=predictions.count)
-        except ValueError:
-            most_common = False
-        print(f"{folder_name} {os.path.basename(video)} -> predictions: {predictions} -> Verdict: {most_common}, time: {avg_time}")
-        return most_common, predictions, avg_time
-    vm = ValidationMetrics()
+        print(f"{folder_name} {os.path.basename(video)} -> predictions: {predictions}, inf time: {avg_time}, pre-processing:  {pre_proc_time}")
+        return predictions, avg_time
+    most_common = ValidationMetrics()
+    true_inside = ValidationMetrics()
     seg_vm = ValidationMetrics()
     vm_top_conf = ValidationMetrics()
     no_seg = 0
     times = []
     for video in glob.glob(os.path.join(args.video,"varroa_infested","*.mkv")):
-        prediction, seg_preds, avg_time = p(video)
+        seg_preds, avg_time = p(video)        
         if len(seg_preds)==0:
             no_seg+=1
         for seg_pred in seg_preds:
             seg_vm.add_prediction(seg_pred,True)
         if len(seg_preds)>0:
-            vm.add_prediction(prediction,True)
+            most_common.add_prediction(max(set(seg_preds), key=seg_preds.count),True)
+            true_inside.add_prediction(True in seg_preds, True)
             times.append(avg_time)
     for video in glob.glob(os.path.join(args.video,"varroa_free","*.mkv")):
-        prediction, seg_preds, avg_time = p(video)
+        seg_preds, avg_time = p(video)
         if len(seg_preds)==0:
             no_seg+=1
         for seg_pred in seg_preds:
             seg_vm.add_prediction(seg_pred,False)
         if len(seg_preds)>0:
-            vm.add_prediction(prediction,False)
+            most_common.add_prediction(max(set(seg_preds), key=seg_preds.count),False)
+            true_inside.add_prediction(True in seg_preds, False)
             times.append(avg_time)
 
-    logger.info(f"Per Video: F1: {vm.get_f1()} | Acc: {vm.get_accuracy()}")
-    tp, fp, tn, fn = vm.get_metrics()
-    logger.info(f"Per Video: TP: {tp}, FP: {fp}, TN: {tn}, FN:{fn}")
-    logger.info(f"Per Segment: F1: {seg_vm.get_f1()} | Acc: {seg_vm.get_accuracy()}")
+    logger.info(f"Most common {most_common}")
+    logger.info(f"True inside {true_inside}")
+    logger.info(f"Per segment: {seg_vm}")
     logger.info(f"Video without segments {no_seg}")
-    logger.info(f"Times {sum(avg_time)/len(avg_time)}")
-    cm = vm.get_confusion_matrix()
-    cm.figure_.savefig(os.path.join(dir_path,"confusion_matrix.png"))
+    logger.info(f"Times {sum(times)/len(times)}")
+    # cm = most_common.get_confusion_matrix()
+    # cm.figure_.savefig(os.path.join(dir_path,"confusion_matrix.png"))
