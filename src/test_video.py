@@ -15,6 +15,7 @@ import time
 args = argparse.ArgumentParser()
 from movinets import MoViNet
 from movinets.config import _C
+import logging
 
 args.add_argument("--model", type=str, required=True, help="Path to weights")
 args.add_argument("--video", type=str, required=True, help="Path to the video to process")
@@ -72,7 +73,11 @@ def process_video(model: torch.nn.Module, video_path: str, window_size: int, dev
 
 RESOLUTION = 0
 if "vivit" in args.model:
-    model:ModelVivit = ModelVivit()
+    folder_name = os.path.basename(os.path.dirname(args.model))
+    vivit_layer = int(folder_name.split("_")[1])
+    if vivit_layer==12:
+        vivit_layer=0
+    model:ModelVivit = ModelVivit(hidden_layers=vivit_layer)
     auto_processing = model.get_image_processor()
     RESOLUTION = 224
     model = torch.nn.DataParallel(model)
@@ -109,9 +114,14 @@ with torch.no_grad():
 torch.cuda.synchronize()
 b = torch.cuda.memory_reserved()
 
+dir_path = os.path.dirname(args.model)
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename=os.path.join(dir_path,'performance.log'), level=logging.INFO, filemode='w')
+logging.getLogger().addHandler(logging.StreamHandler())
+
 mem_bytes = b-a
 mem_mb = mem_bytes/1024**2
-print(f"Memory allocated by the model {mem_bytes} Bytes -> {mem_mb:-2f} MB")
+logger.info(f"Memory allocated by the model {mem_bytes} Bytes -> {mem_mb:-2f} MB")
 
 
 if os.path.isfile(args.video):
@@ -126,26 +136,36 @@ else:
         except ValueError:
             most_common = False
         print(f"{folder_name} {os.path.basename(video)} -> predictions: {predictions} -> Verdict: {most_common}, time: {avg_time}")
-        return most_common, predictions
+        return most_common, predictions, avg_time
     vm = ValidationMetrics()
     seg_vm = ValidationMetrics()
     vm_top_conf = ValidationMetrics()
+    no_seg = 0
+    times = []
     for video in glob.glob(os.path.join(args.video,"varroa_infested","*.mkv")):
-        prediction, seg_preds = p(video)
+        prediction, seg_preds, avg_time = p(video)
+        if len(seg_preds)==0:
+            no_seg+=1
         for seg_pred in seg_preds:
             seg_vm.add_prediction(seg_pred,True)
         if len(seg_preds)>0:
             vm.add_prediction(prediction,True)
+            times.append(avg_time)
     for video in glob.glob(os.path.join(args.video,"varroa_free","*.mkv")):
-        prediction, seg_preds = p(video)
+        prediction, seg_preds, avg_time = p(video)
+        if len(seg_preds)==0:
+            no_seg+=1
         for seg_pred in seg_preds:
             seg_vm.add_prediction(seg_pred,False)
         if len(seg_preds)>0:
             vm.add_prediction(prediction,False)
+            times.append(avg_time)
 
-    print(f"Per Video: F1: {vm.get_f1()} | Acc: {vm.get_accuracy()}")
+    logger.info(f"Per Video: F1: {vm.get_f1()} | Acc: {vm.get_accuracy()}")
     tp, fp, tn, fn = vm.get_metrics()
-    print(f"Per Video: TP: {tp}, FP: {fp}, TN: {tn}, FN:{fn}")
-    print(f"Per Segment: F1: {seg_vm.get_f1()} | Acc: {seg_vm.get_accuracy()}")
+    logger.info(f"Per Video: TP: {tp}, FP: {fp}, TN: {tn}, FN:{fn}")
+    logger.info(f"Per Segment: F1: {seg_vm.get_f1()} | Acc: {seg_vm.get_accuracy()}")
+    logger.info(f"Video without segments {no_seg}")
+    logger.info(f"Times {sum(avg_time)/len(avg_time)}")
     cm = vm.get_confusion_matrix()
-    cm.figure_.savefig("confusion_matrix.png")
+    cm.figure_.savefig(os.path.join(dir_path,"confusion_matrix.png"))
