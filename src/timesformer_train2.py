@@ -24,6 +24,8 @@ parser.add_argument("--lr", type=float, default=1e-3)
 parser.add_argument("--devices", type=str, default="0")
 parser.add_argument("--pre_trained_model", type=str, default=None) # facebook/timesformer-base-finetuned-ssv2
 parser.add_argument("--model", type=str)
+parser.add_argument("--hidden_layer", type=int, default=0)
+parser.add_argument("--worker", type=int, default=8)
 
 args = parser.parse_args()
 
@@ -33,7 +35,7 @@ torch.manual_seed(SEED)
 torch.cuda.manual_seed(SEED)
 
 now = datetime.now()  # current date and time
-date_time = now.strftime("%Y-%b-%d-%H:%M:%S")
+date_time = f"vivit_{args.hidden_layer}_2"#now.strftime("%Y-%b-%d-%H:%M:%S")
 comment = f"BS_{args.batch_size}_aug{args.no_aug}_lr{args.lr}_ds{os.path.basename(args.dataset)}"
 log_dir = os.path.join("../runs", date_time)
 writer = SummaryWriter(log_dir=log_dir)
@@ -46,7 +48,7 @@ pretrained_model = args.pre_trained_model
 RESOLUTION = 0
 data_format = None
 if args.model == "vivit":
-    model:ModelVivit = ModelVivit(meta_former=True)
+    model:ModelVivit = ModelVivit(hidden_layers=args.hidden_layer)
     writer.add_text("Model","ViVit")
     auto_processing = model.get_image_processor()
     RESOLUTION = 224
@@ -103,10 +105,10 @@ train_dataloader = torch.utils.data.DataLoader(
     train_ds,
     batch_size=args.batch_size,
     shuffle=True,
-    num_workers=8,
+    num_workers=args.worker,
 )
 val_dataloader = torch.utils.data.DataLoader(
-    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=8
+    val_ds, batch_size=args.batch_size, shuffle=True, num_workers=args.worker//2
 )
 
 pos_weight = torch.tensor([train_ds.varroa_free_count()/train_ds.varroa_infested_count()]).cuda()
