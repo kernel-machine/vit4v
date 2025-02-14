@@ -1,4 +1,3 @@
-import imp
 import torch
 import argparse
 import os
@@ -12,15 +11,25 @@ import torchvision
 import glob
 from lib.validation_metric import ValidationMetrics
 import time
-args = argparse.ArgumentParser()
-from movinets import MoViNet
-from movinets.config import _C
 import logging
 
+movinet_found = True
+try:
+    from movinets import MoViNet
+    from movinets.config import _C
+except ModuleNotFoundError:
+    movinet_found = False
+
+
+args = argparse.ArgumentParser()
 args.add_argument("--model", type=str, required=True, help="Path to weights")
 args.add_argument("--video", type=str, required=True, help="Path to the video to process")
 args.add_argument("--window_size", type=int, default=16)
+args.add_argument("--export",default=False, action="store_true")
 args = args.parse_args()
+
+if args.export:
+    import torch_tensorrt
 
 
 def process_video(model: torch.nn.Module, video_path: str, window_size: int, device: torch.device, model_resolution:int, image_processing: callable = None) -> list[bool]:
@@ -62,6 +71,7 @@ def process_video(model: torch.nn.Module, video_path: str, window_size: int, dev
             #if "movinet" in args.model:
             #    tensor_images = tensor_images.permute(0,2,1,3,4)
             tensor_images = tensor_images.to(device)
+            print(tensor_images.shape)
             torch.cuda.synchronize()
             start_time = time.time()
             prediction_logits = model(tensor_images)
@@ -85,13 +95,13 @@ if "vivit" in args.model:
     RESOLUTION = 224
     model = torch.nn.DataParallel(model)
     dummy_input = torch.randn(1, 32 , 3, RESOLUTION, RESOLUTION)
-elif "movinet_a1" in args.model:
+elif "movinet_a1" in args.model and movinet_found:
     model = MoViNet(_C.MODEL.MoViNetA1, causal = False, pretrained = True )
     model.classifier[3] = torch.nn.Conv3d(2048, 1, (1,1,1))
     auto_processing = None
     RESOLUTION = 172
     dummy_input = torch.randn(1, 3 , 32, RESOLUTION, RESOLUTION)
-elif "movinet_a2" in args.model:
+elif "movinet_a2" in args.model and movinet_found:
     model = MoViNet(_C.MODEL.MoViNetA2, causal = False, pretrained = True )
     model.classifier[3] = torch.nn.Conv3d(2048, 1, (1,1,1))
     auto_processing = None
@@ -108,6 +118,14 @@ else:
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dummy_input = dummy_input.to(device)
 model.load_state_dict(torch.load(args.model, weights_only=True, map_location=device))
+
+if args.export:
+    model = model.module.eval()
+    trt_gm = torch_tensorrt.compile(model, ir="dynamo", inputs=[dummy_input])
+    torch_tensorrt.save(trt_gm, "trt.ep", inputs=[dummy_input])
+    exit(0)
+
+
 
 torch.cuda.empty_cache()
 a = torch.cuda.memory_reserved()
