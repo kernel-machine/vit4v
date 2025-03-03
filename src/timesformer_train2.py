@@ -35,7 +35,7 @@ torch.manual_seed(SEED)
 torch.cuda.manual_seed(SEED)
 
 now = datetime.now()  # current date and time
-date_time = f"vivit_{args.hidden_layer}_2"#now.strftime("%Y-%b-%d-%H:%M:%S")
+date_time = now.strftime("%Y-%b-%d-%H:%M:%S")
 comment = f"BS_{args.batch_size}_aug{args.no_aug}_lr{args.lr}_ds{os.path.basename(args.dataset)}"
 log_dir = os.path.join("../runs", date_time)
 writer = SummaryWriter(log_dir=log_dir)
