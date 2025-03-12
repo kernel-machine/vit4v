@@ -12,7 +12,7 @@ from multiprocessing.pool import ThreadPool
 '''
 From RAW videos this code extract the segments
 '''
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="Extract segments from videos")
 parser.add_argument(
     "--video_path",
     type=str,

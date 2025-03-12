@@ -1,7 +1,0 @@
-- Training e scegli la migliore tra:
-    - Timesformer32
-    - Vivit32
-    - CNN 32
-- Applica MetaFormer
-- Cerca codice SoftMax Free e provalo
- 

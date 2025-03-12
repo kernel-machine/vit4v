@@ -1,3 +1,0 @@
-timesformer b8 		666MB		ACC_v 0.968	ACC_s: 0.950	0.71s
-movinet_a2_b12_e3 	386MB 		ACC_v 0.857	ACC_s: 0.838	0.06s
-vivit_b4_e5 		270MB		acc_v 0.99	acc_s: 0.97	    0.28s		

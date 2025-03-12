@@ -12,7 +12,6 @@ import glob
 from lib.validation_metric import ValidationMetrics
 import time
 import logging
-from torch.profiler import profile, record_function, ProfilerActivity
 
 movinet_found = True
 try:
@@ -22,11 +21,10 @@ except ModuleNotFoundError:
     movinet_found = False
 
 
-args = argparse.ArgumentParser()
+args = argparse.ArgumentParser(description="Test a model on the orignal videos cropping the bee in realtime")
 args.add_argument("--model", type=str, required=True, help="Path to weights")
 args.add_argument("--video", type=str, required=True, help="Path to the video to process")
-args.add_argument("--window_size", type=int, default=16)
-args.add_argument("--export",default=False, action="store_true")
+args.add_argument("--window_size", type=int, default=16, help="Size of the temporal window to process")
 args = args.parse_args()
 
 if args.export:

@@ -5,7 +5,7 @@ import shutil
 import glob
 from pathlib import Path
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="Videos from segmenets")
 parser.add_argument("--dataset",type=str)
 parser.add_argument("--raw_videos",type=str)
 parser.add_argument("--output_videos",type=str)
