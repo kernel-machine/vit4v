@@ -1,19 +1,12 @@
-import torchvision.transforms.functional
-import transformers
 import numpy as np
 from lib.train.dataset_loader import VarroaDataset
-from lib.train.model import MyModel
 from lib.train.model_vivit import ModelVivit
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import argparse
 from datetime import datetime
 import os
-import random
-import torchvision
 import json
-from movinets import MoViNet
-from movinets.config import _C
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--batch_size", type=int, default=1)
@@ -26,6 +19,7 @@ parser.add_argument("--pre_trained_model", type=str, default=None) # facebook/ti
 parser.add_argument("--model", type=str)
 parser.add_argument("--hidden_layer", type=int, default=0)
 parser.add_argument("--worker", type=int, default=8)
+parser.add_argument("--evaluate", default=False, action="store_true")
 
 args = parser.parse_args()
 
@@ -37,7 +31,7 @@ torch.cuda.manual_seed(SEED)
 now = datetime.now()  # current date and time
 date_time = now.strftime("%Y-%b-%d-%H:%M:%S")
 comment = f"BS_{args.batch_size}_aug{args.no_aug}_lr{args.lr}_ds{os.path.basename(args.dataset)}"
-log_dir = os.path.join("../runs", date_time)
+log_dir = os.path.join("../runs3", date_time)
 writer = SummaryWriter(log_dir=log_dir)
 with open(os.path.join(log_dir,"args.json"),"w") as f:
     f.write(json.dumps(vars(args)))
@@ -47,30 +41,13 @@ with open(os.path.join(log_dir,"args.json"),"w") as f:
 pretrained_model = args.pre_trained_model
 RESOLUTION = 0
 data_format = None
-if args.model == "vivit":
-    model:ModelVivit = ModelVivit(hidden_layers=args.hidden_layer)
-    writer.add_text("Model","ViVit")
-    auto_processing = model.get_image_processor()
-    RESOLUTION = 224
-    data_format = "vivit"
-elif args.model == "movinet_a1":
-    model = MoViNet(_C.MODEL.MoViNetA1, causal = False, pretrained = True )
-    model.classifier[3] = torch.nn.Conv3d(2048, 1, (1,1,1))
-    auto_processing = None
-    RESOLUTION = 172
-    data_format = "movinet"
-elif args.model == "movinet_a2":
-    model = MoViNet(_C.MODEL.MoViNetA2, causal = False, pretrained = True )
-    model.classifier[3] = torch.nn.Conv3d(2048, 1, (1,1,1))
-    auto_processing = None
-    RESOLUTION = 224
-    data_format = "movinet"
-else:
-    model:MyModel = MyModel()
-    writer.add_text("Model","TimeSformer")
-    auto_processing = model.get_image_processor()
-    RESOLUTION = 224
-    data_format = "timesformer"
+
+model:ModelVivit = ModelVivit(hidden_layers=args.hidden_layer)
+writer.add_text("Model","ViVit")
+auto_processing = model.get_image_processor()
+RESOLUTION = 224
+data_format = "vivit"
+
 
 devices = args.devices
 devices = devices.split(",")
@@ -78,10 +55,7 @@ devices = list(map(lambda x:int(x), devices))
 torch.cuda.set_device(devices[0])
 device = torch.device(f"cuda:{devices[0]}" if torch.cuda.is_available() else "cpu")
 model.to(device)
-if "movinet" in args.model:
-    model.clean_activation_buffers()
-else:
-    model = torch.nn.DataParallel(model, device_ids=devices).cuda()
+model = torch.nn.DataParallel(model, device_ids=devices).cuda()
 
 # Load dataset
 val_ds = VarroaDataset(
@@ -133,15 +107,10 @@ for epoch in range(args.epochs):
 
         optimizer.zero_grad()
         out = model(frames)
-        # if args.model == "movinet":
-        #     out = torch.nn.LogSoftmax(dim=1)(out)
         out = out.flatten()
         loss = loss_fn(out, labels)
         loss.backward()
         optimizer.step()
-        if args.model == "movinet":
-            model.clean_activation_buffers()
-            optimizer.zero_grad()
         predicted_classes = torch.sigmoid(out).round()
         correct_train_predictions += (predicted_classes == labels).sum().item()
         total_train_predictions += labels.size(0)
@@ -160,9 +129,7 @@ for epoch in range(args.epochs):
     writer.add_scalar("Loss/train", epoch_train_loss, epoch)
     writer.add_scalar("Acc/train", epoch_train_accuracy, epoch)
     writer.flush()
-
-    if args.model == "movinet":
-        model.clean_activation_buffers()
+        
     # Validation
     model.eval()
     running_val_loss = 0.0
