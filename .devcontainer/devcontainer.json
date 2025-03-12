@@ -34,7 +34,7 @@
   },
   "mounts": [
     {
-      "source": "/media/luca/Home/lucagiovannesi/datasets/prin",
+      "source": "/media/luca/Home/datasets/prin",
       "target": "/dataset",
       "type": "bind"
     }

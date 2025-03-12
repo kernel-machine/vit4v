@@ -1,4 +1,4 @@
-runs
+runs*
 env
 **/__pycache__
 *.pth
