@@ -1,5 +1,3 @@
-from sklearn.metrics import ConfusionMatrixDisplay
-
 class ValidationMetrics:
     def __init__(self):
         self.predictions = []
@@ -28,24 +26,26 @@ class ValidationMetrics:
     
     def get_precision(self)->float:
         tp, fp, _, _ = self.get_metrics()
+        if tp+fp == 0:
+            return 0
         return tp/(tp+fp)
     
     def get_recall(self)->float:
         _, _, tn, fn = self.get_metrics()
+        if tn + fn == 0:
+            return 0
         return tn/(tn+fn)
     
     def get_f1(self)->float:
         precision = self.get_precision()
         recall = self.get_recall()
+        if precision + recall == 0:
+            return 0
         return 2*((precision*recall)/(precision+recall))
     
     def get_accuracy(self)->float:
         tp, fp, tn, fn = self.get_metrics()
         return (tp+tn)/(tp+fp+tn+fn)
-    
-    def get_confusion_matrix(self):
-        m = ConfusionMatrixDisplay.from_predictions(self.labels, self.predictions)
-        return m
     
     def __str__(self):
         tp, fp, tn, fn = self.get_metrics()

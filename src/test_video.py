@@ -12,6 +12,7 @@ import glob
 from lib.validation_metric import ValidationMetrics
 import time
 import logging
+from torch.profiler import profile, record_function, ProfilerActivity
 
 movinet_found = True
 try:
@@ -71,9 +72,8 @@ def process_video(model: torch.nn.Module, video_path: str, window_size: int, dev
             #if "movinet" in args.model:
             #    tensor_images = tensor_images.permute(0,2,1,3,4)
             tensor_images = tensor_images.to(device)
-            print(tensor_images.shape)
-            torch.cuda.synchronize()
             start_time = time.time()
+            torch.cuda.synchronize()
             prediction_logits = model(tensor_images)
             torch.cuda.synchronize()
             end_time = time.time()
@@ -128,12 +128,12 @@ if args.export:
 
 
 torch.cuda.empty_cache()
-a = torch.cuda.memory_reserved()
+a = torch.cuda.memory_allocated()
 model.to(device)
 with torch.no_grad():
     model(dummy_input)
 torch.cuda.synchronize()
-b = torch.cuda.memory_reserved()
+b = torch.cuda.memory_allocated()
 
 dir_path = os.path.dirname(args.model)
 logger = logging.getLogger(__name__)
@@ -160,6 +160,7 @@ else:
     vm_top_conf = ValidationMetrics()
     no_seg = 0
     times = []
+    
     for video in glob.glob(os.path.join(args.video,"varroa_infested","*.mkv")):
         seg_preds, avg_time = p(video)        
         if len(seg_preds)==0:
