@@ -1,2 +1,0 @@
-python -u timesformer_train2.py --dataset /home/nonroot/dataset/manual_video_16 --epochs 100 --devices 0,1 --batch_size 4
-python -u timesformer_train2.py --dataset /home/nonroot/dataset/manual_video_16 --epochs 100 --devices 0 --batch_size 2

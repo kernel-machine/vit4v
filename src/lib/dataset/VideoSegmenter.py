@@ -4,21 +4,29 @@ import os
 import numpy as np
 from collections.abc import Generator
 import time
+from pathlib import Path
 
 MIN_AREA_THRESHOLD = 1250
 BOX_SIZE = 224
 
 class VideoSegmenter:
-    def __init__(self, video_path:str, output_size=1000, show_debug:bool=False) -> None:
+    def __init__(self, video_path:str, output_size=1000, show_debug:bool=False, show_mask:bool = False, output_dir:str=".") -> None:
         self.video_path = video_path
         self.cap = cv2.VideoCapture(video_path)
         self.output_size = output_size
         self.show_debug = show_debug
+        self.show_mask = show_mask
+        self.infested = "infested" in os.path.basename(os.path.dirname(self.video_path))
         if self.show_debug:
+            Path(output_dir).mkdir(parents=True, exist_ok=True)
             video_id = os.path.basename(self.video_path).split(" ")[0]
             video_name = f"video_{video_id}_{int(time.time_ns()/1000)}_debug.mp4"
+            video_name = os.path.join(output_dir, video_name)
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            self.vwriter = cv2.VideoWriter(video_name, fourcc, 20, (2*output_size, output_size*4))
+            if self.show_mask:
+                self.vwriter = cv2.VideoWriter(video_name, fourcc, 20, (2*output_size, output_size*4))
+            else:
+                self.vwriter = cv2.VideoWriter(video_name, fourcc, 20, (2*output_size, int(output_size*0.56)))
             self.vwriter.set(cv2.VIDEOWRITER_PROP_QUALITY, 100)
 
     def get_frames(self) -> Generator[cv2.Mat]:
@@ -80,17 +88,20 @@ class VideoSegmenter:
                                 cropped_frame = frame[y1:y2, x1:x2]
                                 yield cv2.resize(cropped_frame, (self.output_size, self.output_size))
                                 if self.show_debug:
-                                    frame = cv2.rectangle(frame, top_left, bottom_right, (0,0,255), 20)
+                                    frame = cv2.rectangle(frame, top_left, bottom_right, (0,0,255) if self.infested else (0,255,0), 20)
                     if self.show_debug and self.vwriter is not None:
-                        mask_saturation = cv2.cvtColor(mask_saturation, cv2.COLOR_GRAY2BGR)
-                        mask_value = cv2.cvtColor(mask_value, cv2.COLOR_GRAY2BGR)
-                        motion_mask = cv2.cvtColor(motion_mask, cv2.COLOR_GRAY2BGR)
-                        mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-                        frame = np.vstack([mask_saturation, mask_value, motion_mask, mask,frame])
-                        frame = cv2.resize(frame, (2*self.output_size, self.output_size*4))
-                        #self.vwriter.write(frame)
-                        cv2.imshow("Preview",frame)
-                        cv2.waitKey(1000//50)
+                        if self.show_mask:
+                            mask_saturation = cv2.cvtColor(mask_saturation, cv2.COLOR_GRAY2BGR)
+                            mask_value = cv2.cvtColor(mask_value, cv2.COLOR_GRAY2BGR)
+                            motion_mask = cv2.cvtColor(motion_mask, cv2.COLOR_GRAY2BGR)
+                            mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+                            frame = np.vstack([mask_saturation, mask_value, motion_mask, mask,frame])
+                            frame = cv2.resize(frame, (2*self.output_size, self.output_size*4))
+                        else:
+                            frame = cv2.resize(frame, (2*self.output_size, int(self.output_size*0.56)))
+                        self.vwriter.write(frame)
+                        #cv2.imshow("Preview",frame)
+                        #cv2.waitKey(1000//50)
                     
             else:
                 return
@@ -110,14 +121,14 @@ if __name__ == "__main__":
     import glob
     parser = argparse.ArgumentParser()
     parser.add_argument("--video", type=str, help="Input video to segmet")
+    parser.add_argument("--output_dir", type=str, help="Dir to save videos")
     args = parser.parse_args()
 
     for video_path in glob.glob(os.path.join(args.video,"*.mkv")):
         print(f"Processing {video_path}")
-        vs = VideoSegmenter(video_path, show_debug=True, output_size=224)
+        vs = VideoSegmenter(video_path, show_debug=True, output_size=2000, show_mask=False, output_dir=args.output_dir)
         frames = vs.get_frames()
         for frame in frames:
             #cv2.imwrite("image.png",frame)
             #break
             pass
-        break

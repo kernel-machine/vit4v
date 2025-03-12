@@ -1,4 +1,4 @@
-from lib.dataset.VideoSegmenter import VideoSegmenter
+from lib.dataset.VideoSegmenter2 import VideoSegmenterGen
 import argparse
 import glob
 import os
@@ -43,14 +43,12 @@ args = parser.parse_args()
 random.seed(args.seed)
 
 def process_single_video(video_index:int, video_path:str, save_path:str):
-    segmenter = VideoSegmenter(
-        video_path, output_size=1024, show_debug=args.show_preview
-    )
+    segmenter = VideoSegmenterGen(video_path)
     # Video info
     video_id = segmenter.get_video_id()
     video_class = segmenter.get_video_class()
 
-    video_frames = segmenter.get_frames()
+    video_frames = segmenter.get_frames_generator()
 
     video_segment = 0
     while True:  # Iterate over segments

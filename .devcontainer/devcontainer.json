@@ -8,7 +8,7 @@
   "runArgs": [
     "--name",
     "giovannesi_timesformer",
-    "--device","nvidia.com/gpu=7",
+    "--device","nvidia.com/gpu=0",
     "--ipc",
     "host"
   ],
@@ -34,7 +34,7 @@
   },
   "mounts": [
     {
-      "source": "/mnt/ssd1/giovannesi",
+      "source": "/media/luca/Home/datasets/prin",
       "target": "/dataset",
       "type": "bind"
     }
