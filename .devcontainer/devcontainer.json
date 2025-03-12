@@ -1,5 +1,5 @@
 {
-  "name": "TimeSformer",
+  "name": "vit4v",
   "build": {
     "dockerfile": "./Dockerfile",
     "context": "."
@@ -7,7 +7,7 @@
   "shutdownAction": "none",
   "runArgs": [
     "--name",
-    "giovannesi_timesformer",
+    "vit4v",
     "--device","nvidia.com/gpu=0",
     "--ipc",
     "host"
@@ -34,16 +34,9 @@
   },
   "mounts": [
     {
-      "source": "/media/luca/Home/datasets/prin",
+      "source": "/local/dataset",
       "target": "/dataset",
       "type": "bind"
     }
-    // {
-    //   "source": "/run/media/lucagiovannesi/SSD/PRIN",
-    //   "target": "/home/nonroot/ssd",
-    //   "type": "bind"
-    // }
   ]
-  //"containerUser": "vscode"
-  //"forwardPorts": [3000]
 }
