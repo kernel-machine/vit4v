@@ -1,5 +1,4 @@
 ## Vit4V: a Video Classification Method for the Detection of Varroa Destructor from Honeybee
-## Vit4V: a Video Classification Method for the Detection of Varroa Destructor from Honeybee
 
 The Varroa destructor mite threatens honey bee populations. We introduce **Vit4V**, a deep learning framework that analyzes video clips of bees for accurate, 98% detection of infestations. Our method outperforms existing techniques, offering a scalable, non-invasive solution for early detection, reducing chemical use, and supporting sustainable beekeeping.
 
