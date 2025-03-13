@@ -14,8 +14,20 @@ It includes both videos and labelled frames.
 ## Model
 A pretrained model can be downloaded [here](https://drive.google.com/file/d/1_iPDWghnZ9cbfWaGQ8wuxqkq1qq3s-qO/view?usp=sharing)
 
+## How to run
+This software utilizes a devcontainer with [Podman](https://podman.io/), providing a simple way to create a reproducible environment across devices.  
+
+### Setup Instructions  
+1. **Download the dataset** to your local machine.  
+2. Open `.devcontainer/devcontainer.json`.  
+3. Locate the `mounts/source` field and update it with the path where your dataset is stored.  
+4. Open the devcontainer using the VSCode graphical interface
+5. Create a python3.11 environment `python3.11 -m venv env`
+6. Install the packages in the requirements.txt file `./env/bin/pip install -r requirements.txt`
+
 ### Running  `video2segments.py`
 
+First, it is necessary to create the video-clips of 32 frames starting from the original video
 
 ```bash
 python video2segments.py --video_path <path_to_videos> --output_path <path_to_output> [options]
@@ -30,6 +42,9 @@ Where parameters are:
 - `--jobs`: Number of threads to use for processing (default: 2).
 
 ### Running  `train.py`
+
+We start the training using the generated segments.
+
 ```bash
 python train.py --dataset <path_to_dataset> [options]
 ```
@@ -47,6 +62,8 @@ Where the parameters are:
 - `--worker`: Number of workers for data loading (default: 8).
 
 ### Running `test_video.py`
+
+The model is tested on the original videos left for validation.
 
 ```bash
 python test_video.py --model <path_to_model> --video <path_to_video> [options]
