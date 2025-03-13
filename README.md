@@ -11,6 +11,9 @@ You can download the dataset using the following [link](https://drive.google.com
 
 It includes both videos and labelled frames.
 
+## Model
+A pretrained model can be downloaded [here](https://drive.google.com/file/d/1_iPDWghnZ9cbfWaGQ8wuxqkq1qq3s-qO/view?usp=sharing)
+
 ### Running  `video2segments.py`
 
 
