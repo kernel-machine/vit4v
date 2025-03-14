@@ -72,3 +72,6 @@ Where the parameters are:
 - `--model`: Path to the model weights (required).
 - `--video`: Path to the video to process (required).
 - `--window_size`: Size of the temporal window to process (default: 16).
+
+## Licence
+The code, models and dataset used by this repository subject to the licence [Attribution-NonCommercial-NoDerivatives 4.0 International](LICENCE.md)
