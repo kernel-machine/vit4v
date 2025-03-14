@@ -27,9 +27,6 @@ args.add_argument("--video", type=str, required=True, help="Path to the video to
 args.add_argument("--window_size", type=int, default=16, help="Size of the temporal window to process")
 args = args.parse_args()
 
-if args.export:
-    import torch_tensorrt
-
 
 def process_video(model: torch.nn.Module, video_path: str, window_size: int, device: torch.device, model_resolution:int, image_processing: callable = None) -> list[bool]:
     vs = VideoSegmenter(video_path, output_size=224)
@@ -116,14 +113,6 @@ else:
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dummy_input = dummy_input.to(device)
 model.load_state_dict(torch.load(args.model, weights_only=True, map_location=device))
-
-if args.export:
-    model = model.module.eval()
-    trt_gm = torch_tensorrt.compile(model, ir="dynamo", inputs=[dummy_input])
-    torch_tensorrt.save(trt_gm, "trt.ep", inputs=[dummy_input])
-    exit(0)
-
-
 
 torch.cuda.empty_cache()
 a = torch.cuda.memory_allocated()
