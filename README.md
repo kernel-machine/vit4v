@@ -6,10 +6,16 @@ The Varroa destructor mite threatens honey bee populations. We introduce **Vit4V
 - `src/train.py` contains the code for model trainingt the long videos to video clips of 32 frames
 - `src/test_video.py` tests the trained model with the original videos cropping the bee in real-time
 
-## VD<sup>2</sup> Dataset
-You can download the dataset using the following [link](https://drive.google.com/drive/folders/1wYVTamZD406XyzJV_7jZx21OUJbxW92-?usp=drive_link)
+## Authors
+- Luca Giovannesi, giovannesi@diag.uniroma1.it
+- Paolo Russo prusso@diag.uniroma1.it
+- Roberto Beraldi beraldi@diag.uniroma1.it
 
-It includes both videos and labelled frames.
+## VD<sup>2</sup> Dataset
+You can download the datasets using the following:
+- Video dataset: [https://doi.org/10.34740/kaggle/dsv/11159683](https://doi.org/10.34740/kaggle/dsv/11159683)
+- Frame dataset: 
+<!--- [link](https://drive.google.com/drive/folders/1wYVTamZD406XyzJV_7jZx21OUJbxW92-?usp=drive_link) -->
 
 ## Model
 A pretrained model can be downloaded [here](https://drive.google.com/file/d/1_iPDWghnZ9cbfWaGQ8wuxqkq1qq3s-qO/view?usp=sharing)
