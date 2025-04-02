@@ -14,8 +14,7 @@ The Varroa destructor mite threatens honey bee populations. We introduce **Vit4V
 ## VD<sup>2</sup> Dataset
 You can download the datasets using the following:
 - Video dataset: [https://doi.org/10.34740/kaggle/dsv/11159683](https://doi.org/10.34740/kaggle/dsv/11159683)
-- Frame dataset: 
-<!--- [link](https://drive.google.com/drive/folders/1wYVTamZD406XyzJV_7jZx21OUJbxW92-?usp=drive_link) -->
+- Frame dataset: [https://doi.org/10.34740/kaggle/dsv/11254629](https://doi.org/10.34740/kaggle/dsv/11254629)
 
 ## Model
 A pretrained model can be downloaded [here](https://drive.google.com/file/d/1_iPDWghnZ9cbfWaGQ8wuxqkq1qq3s-qO/view?usp=sharing)
