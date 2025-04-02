@@ -19,6 +19,9 @@ You can download the datasets using the following:
 ## Model
 A pretrained model can be downloaded [here](https://drive.google.com/file/d/1_iPDWghnZ9cbfWaGQ8wuxqkq1qq3s-qO/view?usp=sharing)
 
+## Project
+Additional information about the research project [here](https://alcorlab.diag.uniroma1.it/projects/ev2)
+
 ## How to run
 This software utilizes a devcontainer with [Podman](https://podman.io/), providing a simple way to create a reproducible environment across devices.  
 
@@ -77,6 +80,9 @@ Where the parameters are:
 - `--model`: Path to the model weights (required).
 - `--video`: Path to the video to process (required).
 - `--window_size`: Size of the temporal window to process (default: 16).
+
+## Acknowledgments
+This work was (partially) supported by project no. 202277 WMAE CUP B53D23012820006, “EdgeVision against Varroa (EV2): Edge computing in defence of bees” funded by the Italian’s MUR PRIN2022 (ERC PE6) research program.
 
 ## Licence
 The code, models and dataset used by this repository subject to the licence [Attribution-NonCommercial-NoDerivatives 4.0 International](LICENCE.md)
