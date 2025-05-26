@@ -3,7 +3,7 @@
 The Varroa destructor mite threatens honey bee populations. We introduce **Vit4V**, a deep learning framework that analyzes video clips of bees for accurate, 98% detection of infestations. Our method outperforms existing techniques, offering a scalable, non-invasive solution for early detection, reducing chemical use, and supporting sustainable beekeeping.
 
 - `src/video2segments.py` contains the code to convert the long videos to video clips of 32 frames
-- `src/train.py` contains the code for model trainingt the long videos to video clips of 32 frames
+- `src/train.py` contains the code for model training the long videos to video clips of 32 frames
 - `src/test_video.py` tests the trained model with the original videos cropping the bee in real-time
 
 ## Authors
@@ -78,8 +78,8 @@ python test_video.py --model <path_to_model> --video <path_to_video> [options]
 ```
 Where the parameters are:
 - `--model`: Path to the model weights (required).
-- `--video`: Path to the video to process (required).
-- `--window_size`: Size of the temporal window to process (default: 16).
+- `--video`: Path to the folder containing the folders *varroa_free* and *varroa_infested* with the mkv files inside (required).
+- `--window_size`: Size of the temporal window to process (default: 32).
 
 ## Acknowledgments
 This work was (partially) supported by project no. 202277 WMAE CUP B53D23012820006, “EdgeVision against Varroa (EV2): Edge computing in defence of bees” funded by the Italian’s MUR PRIN2022 (ERC PE6) research program.

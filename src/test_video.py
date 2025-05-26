@@ -23,8 +23,8 @@ except ModuleNotFoundError:
 
 args = argparse.ArgumentParser(description="Test a model on the orignal videos cropping the bee in realtime")
 args.add_argument("--model", type=str, required=True, help="Path to weights")
-args.add_argument("--video", type=str, required=True, help="Path to the video to process")
-args.add_argument("--window_size", type=int, default=16, help="Size of the temporal window to process")
+args.add_argument("--video", type=str, required=True, help="Path to the folder containing the folders *varroa_free* and *varroa_infested* with the mkv files inside")
+args.add_argument("--window_size", type=int, default=32, help="Size of the temporal window to process")
 args = args.parse_args()
 
 
