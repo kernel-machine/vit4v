@@ -77,38 +77,19 @@ def process_video(model: torch.nn.Module, video_path: str, window_size: int, dev
             predicted_classes = torch.sigmoid(prediction_logits).round().flatten()
             predictions.append(bool(predicted_classes.cpu()))
 
-    return predictions, 0 if avg_inference_time[1]==0 else avg_inference_time[0]/avg_inference_time[1], sum(pre_proc_times)/len(pre_proc_times)
+    
+
+    return predictions, 0 if avg_inference_time[1]==0 else avg_inference_time[0]/avg_inference_time[1], 0 if len(pre_proc_times)==0 else sum(pre_proc_times)/len(pre_proc_times)
 
 RESOLUTION = 0
-if "vivit" in args.model:
-    folder_name = os.path.basename(os.path.dirname(args.model))
-    vivit_layer = int(folder_name.split("_")[1])
-    if vivit_layer==12:
-        vivit_layer=0
-    model:ModelVivit = ModelVivit(hidden_layers=vivit_layer)
-    auto_processing = model.get_image_processor()
-    RESOLUTION = 224
-    model = torch.nn.DataParallel(model)
-    dummy_input = torch.randn(1, 32 , 3, RESOLUTION, RESOLUTION)
-elif "movinet_a1" in args.model and movinet_found:
-    model = MoViNet(_C.MODEL.MoViNetA1, causal = False, pretrained = True )
-    model.classifier[3] = torch.nn.Conv3d(2048, 1, (1,1,1))
-    auto_processing = None
-    RESOLUTION = 172
-    dummy_input = torch.randn(1, 3 , 32, RESOLUTION, RESOLUTION)
-elif "movinet_a2" in args.model and movinet_found:
-    model = MoViNet(_C.MODEL.MoViNetA2, causal = False, pretrained = True )
-    model.classifier[3] = torch.nn.Conv3d(2048, 1, (1,1,1))
-    auto_processing = None
-    RESOLUTION = 224
-    dummy_input = torch.randn(1, 3 , 32, RESOLUTION, RESOLUTION)
-else:
-    print("loading")
-    model:MyModel = MyModel()
-    auto_processing = model.get_image_processor()
-    RESOLUTION = 224
-    model = torch.nn.DataParallel(model)
-    dummy_input = torch.randn(1, 32 , 3, RESOLUTION, RESOLUTION)
+
+folder_name = os.path.basename(os.path.dirname(args.model))
+vivit_layer = 12
+model:ModelVivit = ModelVivit(hidden_layers=vivit_layer)
+auto_processing = model.get_image_processor()
+RESOLUTION = 224
+model = torch.nn.DataParallel(model)
+dummy_input = torch.randn(1, 32 , 3, RESOLUTION, RESOLUTION)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dummy_input = dummy_input.to(device)
