@@ -11,6 +11,9 @@ The Varroa destructor mite threatens honey bee populations. We introduce **Vit4V
 - Paolo Russo prusso@diag.uniroma1.it
 - Roberto Beraldi beraldi@diag.uniroma1.it
 
+## Paper
+Read the related paper [here](https://doi.ieeecomputersociety.org/10.1109/CVPRW67362.2025.00531)
+
 ## VD<sup>2</sup> Dataset
 You can download the datasets using the following:
 - Video dataset: [https://doi.org/10.34740/kaggle/dsv/11159683](https://doi.org/10.34740/kaggle/dsv/11159683)
