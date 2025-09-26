@@ -9,16 +9,15 @@ import os
 import json
 
 parser = argparse.ArgumentParser(description="Train a model on the dataset")
-parser.add_argument("--batch_size", type=int, default=1, description="Batch size")
-parser.add_argument("--epochs", type=int, default=30, description="Number of epochs")
-parser.add_argument("--dataset", type=str, required=True, description="Path to the dataset")
-parser.add_argument("--no_aug", default=False, action="store_true", description="Disable data augmentation")
-parser.add_argument("--lr", type=float, default=1e-3, description="Learning rate")
-parser.add_argument("--devices", type=str, default="0", description="Devices to use")
-parser.add_argument("--pre_trained_model", type=str, default=None) # facebook/timesformer-base-finetuned-ssv2
-parser.add_argument("--model", type=str, default="vivit", description="Model to use")
-parser.add_argument("--hidden_layer", type=int, default=0, description="Number of hidden layers")
-parser.add_argument("--worker", type=int, default=8, description="Number of workers")
+parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
+parser.add_argument("--epochs", type=int, default=30, help="Number of epochs")
+parser.add_argument("--dataset", type=str, required=True, help="Path to the dataset")
+parser.add_argument("--no_aug", default=False, action="store_true", help="Disable data augmentation")
+parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
+parser.add_argument("--devices", type=str, default="0", help="Devices to use")
+parser.add_argument("--model", type=str, default="vivit", help="Model to use")
+parser.add_argument("--hidden_layer", type=int, default=0, help="Number of hidden layers")
+parser.add_argument("--worker", type=int, default=8, help="Number of workers")
 
 args = parser.parse_args()
 
@@ -37,7 +36,6 @@ with open(os.path.join(log_dir,"args.json"),"w") as f:
     f.close()
 
 # Load model
-pretrained_model = args.pre_trained_model
 RESOLUTION = 0
 data_format = None
 
